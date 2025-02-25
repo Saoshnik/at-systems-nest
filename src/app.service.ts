@@ -2,7 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
 
 interface TreeNode {
-    type: string;
+    type: string; // [key: string]: any
     weight: number;
     children?: TreeNode[];
 }
@@ -60,6 +60,8 @@ export class AppService {
     }
 
     private weightedRandom<T extends { weight: number }>(options: T[]): T {
+        // if (options.length === 1) return options[0];
+
         const totalWeight = options.reduce((sum, opt) => sum + opt.weight, 0);
         let rand = Math.random() * totalWeight;
         for (const opt of options) {
@@ -88,14 +90,18 @@ export class AppService {
             foundedNodes.push(...temp);
         }
 
+        if (foundedNodes.length === 0) {
+            foundedNodes = this.tree;
+        }
+
         console.log('founded');
         console.log(foundedNodes);
 
         const adSet: { type: string; name: string }[] = [];
-        const queue: TreeNode[] = [...foundedNodes]; // Начнем с корневых узлов
+        const queue: TreeNode[] = [...foundedNodes];
 
         while (queue.length > 0) {
-            const currentNode = queue.shift(); // Извлекаем узел из очереди
+            const currentNode = queue.shift();
 
             if (!currentNode) continue;
 

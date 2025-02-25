@@ -12,8 +12,6 @@ export class AppController {
             Array.isArray(value) ? value.map((v) => ({key, value: v})) : [{key, value}]
         );
 
-        // console.log(queryParams);
-
         return this.appService.generateAdSet(queryParams);
     }
 }
