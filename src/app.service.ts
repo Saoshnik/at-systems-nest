@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
 import { randomUUID } from 'crypto';
+import Redis from 'ioredis';
+
+const redis = new Redis({});
 
 interface TreeNode {
     type: string; // [key: string]: any
@@ -53,10 +56,38 @@ const adTree: TreeNode[] = [
 
 @Injectable()
 export class AppService {
-    private readonly tree: TreeNode[];
+    private tree: TreeNode[];
+    private readonly TTL: number;
 
     constructor() {
-        this.tree = adTree;
+        this.TTL = 3600;
+        this.initTree();
+    }
+
+    private async initTree() {
+        const temp = await this.getRedisTree('tree');
+        if (!temp) {
+            await this.setRedisTree('tree', adTree);
+            this.tree = adTree;
+        }
+        this.tree = temp!;
+    }
+
+    private async setRedisTree(key: string, tree: TreeNode[]): Promise<void> {
+        await redis.setex(key, this.TTL, JSON.stringify(tree));
+    }
+
+    private async getRedisTree(key: string): Promise<TreeNode[] | undefined> {
+        const redisTree = await redis.get(key);
+        if (!redisTree) {
+            return undefined;
+        }
+
+        const tree: TreeNode[] | TreeNode = JSON.parse(redisTree);
+        if (!Array.isArray(tree)) {
+            return [tree];
+        }
+        return tree;
     }
 
     private weightedRandom<T extends { weight: number }>(options: T[]): T {
